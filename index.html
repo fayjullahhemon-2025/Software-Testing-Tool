@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Postman+ Clone</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="syntax.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { colors: { dark: '#1e1e1e', darker: '#121212', lightgray: '#e0e0e0' } } }
+    }
+  </script>
+  <style>
+    body { background-color: #121212; color: #e0e0e0; margin: 0; padding: 0; }
+    .editor { background-color: #1e1e1e; border: 1px solid #444; }
+    .tab { cursor: pointer; padding: 0.5rem 1rem; font-size: 0.875rem; }
+    .tab.active { background: #2d2d2d; border-bottom: 2px solid #3b82f6; }
+    .sidebar-item { cursor: pointer; padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+    .sidebar-item:hover { background: #2d2d2d; }
+    .env-row { display: flex; gap: 0.25rem; margin-bottom: 0.25rem; }
+    .env-key { background: #2d2d2d; padding: 0.25rem; border-radius: 0.25rem 0 0 0.25rem; font-size: 0.75rem; }
+    .env-val { background: #3a3a3a; padding: 0.25rem; border-radius: 0 0.25rem 0.25rem 0; font-size: 0.75rem; flex: 1; }
+  </style>
+</head>
+<body class="dark text-gray-200 min-h-screen flex">
+
+  <!-- LEFT SIDEBAR -->
+  <div class="w-64 bg-gray-900 flex flex-col">
+    <!-- Workspaces -->
+    <div class="p-3 flex-1 overflow-y-auto">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-sm font-semibold">Workspaces</h3>
+        <button onclick="createWorkspaceUI()" class="text-xs bg-green-700 px-1.5 py-0.5 rounded">+</button>
+      </div>
+      <div id="workspacesList" class="space-y-1"></div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="flex-1 ml-0">
+    <!-- Environment Section -->
+    <div class="p-4 border-b border-gray-800">
+      <h3 class="font-semibold mb-2 text-sm">Environment Variables</h3>
+      <div id="envVarsList" class="mb-2 max-h-32 overflow-y-auto"></div>
+      <div class="flex gap-1">
+        <input type="text" id="newVarKey" placeholder="Key" class="flex-1 bg-gray-700 text-white text-xs rounded px-2 py-1">
+        <input type="text" id="newVarValue" placeholder="Value" class="flex-1 bg-gray-700 text-white text-xs rounded px-2 py-1">
+        <button onclick="addEnvVar()" class="bg-green-700 hover:bg-green-600 text-xs px-2 py-1 rounded">+</button>
+        <button onclick="saveEnvironment()" class="bg-blue-700 hover:bg-blue-600 text-xs px-2 py-1 rounded">Save Env</button>
+        <input type="text" id="envNameInput" placeholder="Env Name" class="w-24 bg-gray-700 text-white text-xs rounded px-2 py-1">
+      </div>
+    </div>
+
+    <!-- Request Bar -->
+    <div class="p-4 border-b border-gray-800">
+      <div class="flex gap-2 mb-2">
+        <select id="method" class="bg-gray-800 text-white rounded px-3 py-1 text-sm">
+          <option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option>
+        </select>
+        <input type="text" id="url" placeholder="Enter URL (use {{var}})" class="flex-1 bg-gray-800 text-white rounded px-3 py-1 text-sm">
+        <button onclick="sendRequest()" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm">Send</button>
+      </div>
+      <div class="flex gap-2">
+        <input type="text" id="requestName" placeholder="Request name" class="bg-gray-800 text-white rounded px-3 py-1 text-sm flex-1">
+        <button onclick="saveRequest()" class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-xs">Save</button>
+        <button onclick="saveRequestAs()" class="bg-purple-700 hover:bg-purple-600 text-xs px-2 py-1 rounded">Save As</button>
+        <button onclick="clearForm()" class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-xs">Clear</button>
+        <button onclick="exportCollection()" class="bg-purple-700 hover:bg-purple-600 px-3 py-1 rounded text-xs">Export</button>
+        <button onclick="importCollection()" class="bg-purple-700 hover:bg-purple-600 px-3 py-1 rounded text-xs">Import</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="border-b border-gray-800 flex">
+      <div class="tab active" onclick="showTab('body')">Body</div>
+      <div class="tab" onclick="showTab('headers')">Headers</div>
+      <div class="tab" onclick="showTab('tests')">Tests</div>
+    </div>
+
+    <!-- Tab Content -->
+    <div id="tabContent" class="p-4 h-40">
+      <div id="bodyTab">
+        <textarea id="bodyInput" placeholder="Request body" class="w-full h-32 editor rounded p-2 font-mono text-sm"></textarea>
+      </div>
+      <div id="headersTab" class="hidden">
+        <textarea id="headersInput" placeholder="Key: Value (one per line)" class="w-full h-32 editor rounded p-2 font-mono text-sm"></textarea>
+      </div>
+      <div id="testsTab" class="hidden">
+        <textarea id="testsInput" placeholder="pm.test('Status 200', () => pm.response.to.have.status(200));" class="w-full h-32 editor rounded p-2 font-mono text-sm"></textarea>
+      </div>
+    </div>
+
+    <!-- Response -->
+    <div class="p-4">
+      <h3 class="font-semibold mb-1">Response</h3>
+      <pre id="response" class="editor p-3 rounded overflow-auto max-h-96 font-mono text-sm"></pre>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
