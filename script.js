@@ -340,10 +340,17 @@ function formatJSON(json) {
 }
 
 function runTests(responseText, statusCode) {
+  // Mock pm object
   const pm = {
     response: {
       text: () => responseText,
-      json: () => JSON.parse(responseText),
+      json: () => {
+        try {
+          return JSON.parse(responseText);
+        } catch (e) {
+          throw new Error("Response is not valid JSON");
+        }
+      },
       to: {
         have: {
           status: (code) => {
@@ -351,6 +358,14 @@ function runTests(responseText, statusCode) {
           }
         }
       }
+    },
+    environment: {
+      set: (key, value) => {
+        currentEnvironment.vars[key] = value;
+        renderEnvVars(); // Update UI
+        console.log(`✅ Environment variable "${key}" set to "${value}"`);
+      },
+      get: (key) => currentEnvironment.vars[key]
     },
     expect: (val) => ({
       to: {
@@ -374,13 +389,23 @@ function runTests(responseText, statusCode) {
       }
     }
   };
+
+  const testsCode = document.getElementById('testsInput').value.trim();
+
+  if (!testsCode) {
+    console.log("⚠️ No test script to run");
+    return;
+  }
+
+  // Wrap in try-catch to prevent global crash
   try {
+    // Execute test script safely
     new Function('pm', testsCode)(pm);
   } catch (err) {
-    alert('Test script error:\n' + err.message);
+    alert(`Test script error:\n${err.message}`);
+    console.error('Test script execution failed:', err);
   }
 }
-
 // =============
 // IMPORT / EXPORT
 // =============
@@ -431,6 +456,7 @@ function saveRequestAs() {
   document.getElementById('requestName').value = name;
   saveRequest();
 }
+
 // =============
 // INIT
 // =============
