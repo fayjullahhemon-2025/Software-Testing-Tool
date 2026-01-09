@@ -31,5 +31,4 @@ A **lightweight, self-hosted Postman alternative** built with **HTML, Tailwind C
   pm.test("Status is 200", () => pm.response.to.have.status(200));
   pm.test("Has token", () => pm.expect(pm.response.json()).to.have.property('token'));
 
- -- Tests run automatically after each request
- -- Instant alert feedback on test failures
+
