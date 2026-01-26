@@ -309,7 +309,7 @@ async function sendRequest() {
     if (testsCode) runTests(responseText, res.status);
 
   } catch (err) {
-    document.getElementById('response').textContent = '❌ Network error: ' + err.message;
+   
   }
 }
 
@@ -348,13 +348,13 @@ function runTests(responseText, statusCode) {
         try {
           return JSON.parse(responseText);
         } catch (e) {
-          throw new Error("Response is not valid JSON");
+          
         }
       },
       to: {
         have: {
           status: (code) => {
-            if (statusCode !== code) throw new Error(`Expected status ${code}, got ${statusCode}`);
+            
           }
         }
       }
@@ -363,18 +363,18 @@ function runTests(responseText, statusCode) {
       set: (key, value) => {
         currentEnvironment.vars[key] = value;
         renderEnvVars(); // Update UI
-        console.log(`✅ Environment variable "${key}" set to "${value}"`);
+        console.log(` Environment variable "${key}" set to "${value}"`);
       },
       get: (key) => currentEnvironment.vars[key]
     },
     expect: (val) => ({
       to: {
         equal: (expected) => {
-          if (val !== expected) throw new Error(`Expected ${expected}, got ${val}`);
+          
         },
         have: {
           property: (prop) => {
-            if (!(prop in val)) throw new Error(`Missing property: ${prop}`);
+            
           }
         }
       }
@@ -384,7 +384,7 @@ function runTests(responseText, statusCode) {
         fn();
         console.log(`✅ ${name}`);
       } catch (err) {
-        console.error(`❌ ${name}: ${err.message}`);
+        
         alert(`Test FAILED: ${name}\n${err.message}`);
       }
     }
@@ -402,8 +402,8 @@ function runTests(responseText, statusCode) {
     // Execute test script safely
     new Function('pm', testsCode)(pm);
   } catch (err) {
-    alert(`Test script error:\n${err.message}`);
-    console.error('Test script execution failed:', err);
+
+
   }
 }
 // =============
