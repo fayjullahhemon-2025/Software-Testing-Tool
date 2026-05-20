@@ -1,102 +1,393 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Software testing tool</title>
+  <title>AetherTest - Next-Gen API Testing Client</title>
+  
+  <!-- Premium Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="syntax.css">
+  
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: { extend: { colors: { dark: '#1e1e1e', darker: '#121212', lightgray: '#e0e0e0' } } }
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"Fira Code"', 'monospace'],
+          },
+          colors: {
+            cyberdark: '#080d16',
+            cybercard: '#0f172a',
+            accent: {
+              indigo: '#6366f1',
+              violet: '#8b5cf6',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+            }
+          }
+        }
+      }
     }
   </script>
+  
   <style>
-    body { background-color: #121212; color: #e0e0e0; margin: 0; padding: 0; }
-    .editor { background-color: #1e1e1e; border: 1px solid #444; }
-    .tab { cursor: pointer; padding: 0.5rem 1rem; font-size: 0.875rem; }
-    .tab.active { background: #2d2d2d; border-bottom: 2px solid #3b82f6; }
-    .sidebar-item { cursor: pointer; padding: 0.25rem 0.5rem; font-size: 0.875rem; }
-    .sidebar-item:hover { background: #2d2d2d; }
-    .env-row { display: flex; gap: 0.25rem; margin-bottom: 0.25rem; }
-    .env-key { background: #2d2d2d; padding: 0.25rem; border-radius: 0.25rem 0 0 0.25rem; font-size: 0.75rem; }
-    .env-val { background: #3a3a3a; padding: 0.25rem; border-radius: 0 0.25rem 0.25rem 0; font-size: 0.75rem; flex: 1; }
+    body {
+      background-color: #080d16;
+      color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    
+    /* Elegant active states */
+    .tab-btn {
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .tab-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      transition: all 0.2s ease;
+      transform: translateX(-50%);
+    }
+    .tab-btn.active {
+      color: #a78bfa;
+    }
+    .tab-btn.active::after {
+      width: 100%;
+    }
+    
+    /* Code Editor Inputs */
+    .editor-textarea {
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      font-family: 'Fira Code', monospace;
+      color: #cbd5e1;
+      resize: none;
+      transition: all 0.2s ease;
+    }
+    .editor-textarea:focus {
+      border-color: rgba(99, 102, 241, 0.4);
+      outline: none;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.1);
+    }
   </style>
 </head>
-<body class="dark text-gray-200 min-h-screen flex">
+<body class="h-full flex flex-col overflow-hidden text-slate-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
 
-  <!-- LEFT SIDEBAR -->
-  <div class="w-64 bg-gray-900 flex flex-col">
-    <!-- Workspaces -->
-    <div class="p-3 flex-1 overflow-y-auto">
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="text-sm font-semibold">Workspaces</h3>
-        <button onclick="createWorkspaceUI()" class="text-xs bg-green-700 px-1.5 py-0.5 rounded">+</button>
+  <!-- TOP BRANDING BAR -->
+  <header class="h-14 border-b border-slate-900 bg-slate-950/80 backdrop-blur px-4 flex items-center justify-between shrink-0 select-none z-10">
+    <div class="flex items-center gap-3">
+      <div class="h-8 w-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 active-glow">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+        </svg>
       </div>
-      <div id="workspacesList" class="space-y-1"></div>
-    </div>
-  </div>
-
-  <!-- MAIN CONTENT -->
-  <div class="flex-1 ml-0">
-    <!-- Environment Section -->
-    <div class="p-4 border-b border-gray-800">
-      <h3 class="font-semibold mb-2 text-sm">Environment Variables</h3>
-      <div id="envVarsList" class="mb-2 max-h-32 overflow-y-auto"></div>
-      <div class="flex gap-1">
-        <input type="text" id="newVarKey" placeholder="Key" class="flex-1 bg-gray-700 text-white text-xs rounded px-2 py-1">
-        <input type="text" id="newVarValue" placeholder="Value" class="flex-1 bg-gray-700 text-white text-xs rounded px-2 py-1">
-        <button onclick="addEnvVar()" class="bg-green-700 hover:bg-green-600 text-xs px-2 py-1 rounded">+</button>
-        <button onclick="saveEnvironment()" class="bg-blue-700 hover:bg-blue-600 text-xs px-2 py-1 rounded">Save Env</button>
-        <input type="text" id="envNameInput" placeholder="Env Name" class="w-24 bg-gray-700 text-white text-xs rounded px-2 py-1">
+      <div>
+        <span class="font-bold text-base bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">AetherTest</span>
+        <span class="text-[10px] uppercase font-semibold tracking-widest text-indigo-400 bg-indigo-950/40 px-1.5 py-0.5 rounded ml-2 border border-indigo-900/30">Postman+ v2.0</span>
       </div>
     </div>
-
-    <!-- Request Bar -->
-    <div class="p-4 border-b border-gray-800">
-      <div class="flex gap-2 mb-2">
-        <select id="method" class="bg-gray-800 text-white rounded px-3 py-1 text-sm">
-          <option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option>
+    
+    <!-- Environment Select & Controls -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 rounded-lg px-2.5 py-1.5 shadow-inner">
+        <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h2m-4-3h9m-9 3h9m-9 3h3m2 4h4a2 2 0 002-2V9a2 2 0 00-2-2h-3"></path>
+        </svg>
+        <span class="text-xs font-medium text-slate-400">Environment:</span>
+        <select id="envSelector" onchange="switchEnvironment(this.value)" class="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none cursor-pointer pr-1">
+          <option value="Default" class="bg-slate-950">Default</option>
         </select>
-        <input type="text" id="url" placeholder="Enter URL (use {{var}})" class="flex-1 bg-gray-800 text-white rounded px-3 py-1 text-sm">
-        <button onclick="sendRequest()" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm">Send</button>
+        
+        <!-- Manage Env Button (Gear) -->
+        <button onclick="toggleEnvManager()" class="p-1 hover:bg-slate-800 rounded transition-colors text-slate-400 hover:text-slate-200 ml-1" title="Manage environment variables">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+        </button>
       </div>
-      <div class="flex gap-2">
-        <input type="text" id="requestName" placeholder="Request name" class="bg-gray-800 text-white rounded px-3 py-1 text-sm flex-1">
-        <button onclick="saveRequest()" class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-xs">Save</button>
-        <button onclick="saveRequestAs()" class="bg-purple-700 hover:bg-purple-600 text-xs px-2 py-1 rounded">Save As</button>
-        <button onclick="clearForm()" class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-xs">Clear</button>
-        <button onclick="exportCollection()" class="bg-purple-700 hover:bg-purple-600 px-3 py-1 rounded text-xs">Export</button>
-        <button onclick="importCollection()" class="bg-purple-700 hover:bg-purple-600 px-3 py-1 rounded text-xs">Import</button>
+    </div>
+  </header>
+
+  <!-- BODY CONTENT (SIDEBAR + MAIN SPLIT WORKSPACE) -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- SLIDING ENVIRONMENT MANAGER DRAWER -->
+    <div id="envManagerDrawer" class="absolute top-0 right-0 w-96 h-full bg-slate-950/95 border-l border-slate-800 shadow-2xl z-20 translate-x-full transition-transform duration-300 ease-in-out backdrop-blur flex flex-col">
+      <div class="p-4 border-b border-slate-900 flex justify-between items-center bg-slate-950">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+          </svg>
+          <span class="font-bold text-sm text-slate-100">Environment Manager</span>
+        </div>
+        <button onclick="toggleEnvManager()" class="text-slate-400 hover:text-slate-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="p-4 flex-1 overflow-y-auto space-y-4">
+        <!-- Select / Save Block -->
+        <div class="space-y-2.5">
+          <label class="block text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Save Current State As</label>
+          <div class="flex gap-2">
+            <input type="text" id="envNameInput" placeholder="Environment Name" class="flex-1 bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-xs focus:border-indigo-500/50 focus:outline-none">
+            <button onclick="saveEnvironment()" class="glow-btn-primary bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-1.5 rounded font-semibold text-white">Save</button>
+          </div>
+        </div>
+
+        <hr class="border-slate-900" />
+
+        <!-- Variable List -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center">
+            <label class="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Variables</label>
+            <span class="text-[10px] text-slate-500 font-mono" id="envVarCount">0 items</span>
+          </div>
+          <div id="envVarsList" class="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
+            <!-- Dynamically populated vars -->
+          </div>
+        </div>
+
+        <hr class="border-slate-900" />
+
+        <!-- Add Variable Form -->
+        <div class="space-y-2.5 bg-slate-900/40 border border-slate-900 p-3 rounded-lg">
+          <label class="block text-[11px] font-semibold tracking-wider text-indigo-400 uppercase">Add Variable</label>
+          <div class="space-y-2">
+            <input type="text" id="newVarKey" placeholder="Variable name (Key)" class="w-full bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-xs focus:border-indigo-500/50 focus:outline-none">
+            <input type="text" id="newVarValue" placeholder="Value" class="w-full bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-xs focus:border-indigo-500/50 focus:outline-none">
+            <button onclick="addEnvVar()" class="w-full glow-btn-primary bg-emerald-600 hover:bg-emerald-500 text-xs py-1.5 rounded font-semibold text-white flex items-center justify-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Add Variable
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="border-b border-gray-800 flex">
-      <div class="tab active" onclick="showTab('body')">Body</div>
-      <div class="tab" onclick="showTab('headers')">Headers</div>
-      <div class="tab" onclick="showTab('tests')">Tests</div>
-    </div>
+    <!-- LEFT SIDEBAR (WORKSPACES & COLLECTIONS) -->
+    <aside id="sidebar" class="w-72 sidebar-glass shrink-0 flex flex-col h-full z-10 transition-all duration-300">
+      
+      <!-- Workspaces Header -->
+      <div class="p-4 border-b border-slate-900/60 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <span class="font-bold text-xs uppercase tracking-wider text-slate-300">Workspaces</span>
+        </div>
+        <button onclick="createWorkspaceUI()" class="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded transition-all duration-200" title="Create Workspace">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+        </button>
+      </div>
 
-    <!-- Tab Content -->
-    <div id="tabContent" class="p-4 h-40">
-      <div id="bodyTab">
-        <textarea id="bodyInput" placeholder="Request body" class="w-full h-32 editor rounded p-2 font-mono text-sm"></textarea>
+      <!-- Workspaces, Modules, and Requests Tree (Scrollable) -->
+      <div id="workspacesList" class="flex-1 overflow-y-auto p-3 space-y-3">
+        <!-- Rendered dynamically by script.js -->
+        <div class="text-center py-8 text-xs text-slate-500 font-medium">
+          No workspaces active.<br>Click '+' to create one.
+        </div>
       </div>
-      <div id="headersTab" class="hidden">
-        <textarea id="headersInput" placeholder="Key: Value (one per line)" class="w-full h-32 editor rounded p-2 font-mono text-sm"></textarea>
-      </div>
-      <div id="testsTab" class="hidden">
-        <textarea id="testsInput" placeholder="pm.test('Status 200', () => pm.response.to.have.status(200));" class="w-full h-32 editor rounded p-2 font-mono text-sm"></textarea>
-      </div>
-    </div>
 
-    <!-- Response -->
-    <div class="p-4">
-      <h3 class="font-semibold mb-1">Response</h3>
-      <pre id="response" class="editor p-3 rounded overflow-auto max-h-96 font-mono text-sm"></pre>
-    </div>
+      <!-- Sidebar Utilities (Footer) -->
+      <div class="p-3 border-t border-slate-900/60 bg-slate-950/40 grid grid-cols-2 gap-2 shrink-0">
+        <button onclick="importCollection()" class="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 text-[11px] font-semibold text-slate-300 rounded border border-slate-800 transition-colors flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+          </svg>
+          Import Suite
+        </button>
+        <button onclick="exportCollection()" class="py-1.5 px-2 bg-indigo-900/20 hover:bg-indigo-900/40 text-[11px] font-semibold text-indigo-300 rounded border border-indigo-950/60 transition-colors flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Export Suite
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN TWO-COLUMN SPLIT PANEL (REQUEST + RESPONSE) -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden bg-[#080d16]">
+      
+      <!-- MIDDLE COLUMN (REQUEST BUILDER & EDITOR) -->
+      <section class="flex-1 flex flex-col border-r border-slate-900/60 min-w-0">
+        
+        <!-- Request Identity Header -->
+        <div class="px-5 py-3 border-b border-slate-900/60 bg-slate-950/20 flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <svg class="w-4 h-4 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+            </svg>
+            <input type="text" id="requestName" placeholder="Untitled Request" class="bg-transparent text-sm font-bold text-slate-100 placeholder-slate-600 focus:outline-none border-b border-transparent focus:border-indigo-500/30 py-0.5 w-full max-w-sm truncate" />
+          </div>
+          
+          <div class="flex items-center gap-1.5">
+            <button onclick="saveRequest()" class="py-1 px-3 bg-slate-900 hover:bg-slate-800 text-xs font-semibold text-slate-300 border border-slate-800 rounded transition-all">
+              Save
+            </button>
+            <button onclick="saveRequestAs()" class="py-1 px-3 bg-purple-900/30 hover:bg-purple-900/50 text-xs font-semibold text-purple-300 border border-purple-950 rounded transition-all">
+              Save As
+            </button>
+            <button onclick="clearForm()" class="py-1 px-2.5 bg-slate-900 hover:bg-slate-800 text-xs font-medium text-slate-400 rounded transition-all" title="Clear request data">
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- URL Input & Action Bar -->
+        <div class="p-4 border-b border-slate-900/60 bg-slate-950/10 shrink-0">
+          <div class="flex gap-2 p-1 bg-slate-900/80 border border-slate-800 rounded-xl focus-within:border-indigo-500/40 focus-within:ring-1 focus-within:ring-indigo-500/20 transition-all">
+            <!-- Method Select Box -->
+            <select id="method" class="bg-slate-950 text-slate-200 text-xs font-bold rounded-lg px-3 py-2 border border-slate-800 focus:outline-none cursor-pointer">
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="PATCH">PATCH</option>
+              <option value="DELETE">DELETE</option>
+            </select>
+            
+            <!-- URL Input Box -->
+            <input type="text" id="url" placeholder="https://api.example.com/v1/users or {{base_url}}/auth/login" class="flex-1 bg-transparent text-sm text-slate-200 placeholder-slate-600 focus:outline-none px-2" />
+            
+            <!-- Send Button -->
+            <button id="sendBtn" onclick="sendRequest()" class="glow-btn-primary bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white px-5 rounded-lg flex items-center justify-center gap-2">
+              <span id="sendBtnText">Send</span>
+              <svg id="sendBtnIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+              </svg>
+              <svg id="sendBtnSpinner" class="w-3.5 h-3.5 animate-spin hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Request Sub-Tabs -->
+        <div class="border-b border-slate-900/60 bg-slate-950/20 px-4 flex items-end justify-between shrink-0">
+          <div class="flex gap-2">
+            <button class="tab-btn active px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200" onclick="showTab('body')">Body (JSON)</button>
+            <button class="tab-btn px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200" onclick="showTab('headers')">Headers</button>
+            <button class="tab-btn px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200" onclick="showTab('tests')">Test Script</button>
+          </div>
+          <div class="py-2 text-[10px] font-medium text-slate-500 flex items-center gap-1">
+            <svg class="w-3 h-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Supports variables via {{key}}
+          </div>
+        </div>
+
+        <!-- Request Sub-Tabs Content (Scrollable) -->
+        <div id="tabContent" class="flex-1 p-4 overflow-y-auto">
+          <!-- Body Tab -->
+          <div id="bodyTab" class="h-full flex flex-col">
+            <textarea id="bodyInput" placeholder='{&#10;  "username": "alice_test",&#10;  "password": "password123"&#10;}' class="w-full flex-1 editor-textarea rounded-xl p-4 font-mono text-sm leading-relaxed" spellcheck="false"></textarea>
+          </div>
+          
+          <!-- Headers Tab -->
+          <div id="headersTab" class="hidden h-full flex flex-col">
+            <textarea id="headersInput" placeholder="Content-Type: application/json&#10;Accept: */*&#10;Custom-Header: {{some_variable}}" class="w-full flex-1 editor-textarea rounded-xl p-4 font-mono text-sm leading-relaxed" spellcheck="false"></textarea>
+          </div>
+          
+          <!-- Tests Tab -->
+          <div id="testsTab" class="hidden h-full flex flex-col">
+            <div class="mb-2 text-[11px] text-slate-500 font-mono leading-tight bg-slate-950/40 p-2 border border-slate-900 rounded">
+              pm.test("Status code is 200", () => pm.response.to.have.status(200));<br>
+              pm.environment.set("userId", pm.response.json().userId);
+            </div>
+            <textarea id="testsInput" placeholder="pm.test('Status is 200', () => pm.response.to.have.status(200));" class="w-full flex-1 editor-textarea rounded-xl p-4 font-mono text-sm leading-relaxed" spellcheck="false"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN (RESPONSE VIEW & DETAILS) -->
+      <section class="flex-1 flex flex-col bg-slate-950/15 overflow-hidden min-w-0">
+        
+        <!-- Response Header & Performance Stats -->
+        <div class="px-5 py-3 border-b border-slate-900/60 bg-slate-950/20 flex justify-between items-center shrink-0">
+          <div class="flex items-center gap-3">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span class="font-bold text-sm text-slate-100">Response</span>
+          </div>
+          
+          <!-- Stats Indicators -->
+          <div class="flex items-center gap-2">
+            <!-- Status Badge -->
+            <div id="responseStatusBadge" class="hidden px-2.5 py-0.5 rounded text-[11px] font-bold shadow-sm flex items-center gap-1.5">
+              <span id="responseStatusDot" class="w-1.5 h-1.5 rounded-full"></span>
+              <span id="responseStatusText">200 OK</span>
+            </div>
+            <!-- Time Badge -->
+            <div id="responseTimeBadge" class="hidden bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-400 px-2 py-0.5 rounded flex items-center gap-1">
+              <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span id="responseTimeText">0 ms</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Response Action Sub-Tabs -->
+        <div class="border-b border-slate-900/60 bg-slate-950/20 px-4 flex items-end justify-between shrink-0">
+          <div class="flex gap-2">
+            <button id="resTabBodyBtn" class="tab-btn active px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200" onclick="showResponseTab('body')">JSON / Pretty</button>
+            <button id="resTabRawBtn" class="tab-btn px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200" onclick="showResponseTab('raw')">Raw Text</button>
+            <button id="resTabTestsBtn" class="tab-btn px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200" onclick="showResponseTab('tests')">
+              Test Results
+              <span id="testResultsCounter" class="hidden ml-1.5 px-1.5 py-0.2 bg-slate-800 text-[10px] text-slate-300 rounded-full font-bold">0/0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Response Window -->
+        <div class="flex-1 p-4 overflow-y-auto flex flex-col min-h-0 bg-[#070c14]/40">
+          
+          <!-- Tab Response Body -->
+          <div id="responseBodyTab" class="flex-1 flex flex-col min-h-0">
+            <pre id="response" class="w-full flex-1 overflow-auto bg-slate-950/60 border border-slate-900/60 rounded-xl p-4 font-mono text-xs leading-relaxed text-slate-300" placeholder="Response data will appear here..."></pre>
+          </div>
+          
+          <!-- Tab Response Raw Text -->
+          <div id="responseRawTab" class="hidden flex-1 flex flex-col min-h-0">
+            <textarea id="responseRaw" class="w-full flex-1 overflow-auto bg-slate-950/60 border border-slate-900/60 rounded-xl p-4 font-mono text-xs leading-relaxed text-slate-300 focus:outline-none" readonly></textarea>
+          </div>
+          
+          <!-- Tab Response Test Results -->
+          <div id="responseTestsTab" class="hidden flex-1 flex flex-col min-h-0">
+            <div id="testResultsPlaceholder" class="text-center py-10 text-xs text-slate-500 font-medium">
+              No tests have been executed for this request.
+            </div>
+            <div id="testResultsList" class="space-y-2 hidden">
+              <!-- Dynamically populated test assertions results -->
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
 
   <script src="script.js"></script>
