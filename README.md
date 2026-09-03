@@ -4,6 +4,8 @@ A **lightweight, self-hosted Postman alternative** built with **HTML, Tailwind C
 
 This tool runs entirely in your browser, requires **no database**, and is ideal for students, backend developers, and small teams who want a fast, local API testing solution.
 
+<a href="https://youtu.be/fKsgbnic9uc"><img src="https://img.shields.io/badge/%E2%96%B6%20Watch%20Demo-YouTube-red?style=for-the-badge&logo=youtube" /></a>
+
 ---
 
 ## ✨ Features
@@ -205,9 +207,6 @@ Planned features for upcoming releases:
 
 ---
 
-<a href="https://youtu.be/fKsgbnic9uc"><img src="https://img.shields.io/badge/%E2%96%B6%20Watch%20Demo-YouTube-red?style=for-the-badge&logo=youtube" /></a>
-
----
 
 ## 📜 License
 
