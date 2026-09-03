@@ -205,6 +205,10 @@ Planned features for upcoming releases:
 
 ---
 
+<a href="https://youtu.be/fKsgbnic9uc"><img src="https://img.shields.io/badge/%E2%96%B6%20Watch%20Demo-YouTube-red?style=for-the-badge&logo=youtube" /></a>
+
+---
+
 ## 📜 License
 
 This project is open-source and free to use for educational and development purposes.
